@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>アンケート（テスト）</title>
+<style>
+  body { font-family: sans-serif; margin: 0; padding: 16px; background: #f4f8f4; color: #2b2f2e; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .who { color: #23695d; font-size: 14px; margin-bottom: 12px; }
+  .q { background: #fff; border: 1px solid #dde6df; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+  .q b { display: block; margin-bottom: 8px; }
+  label { display: block; padding: 6px 0; }
+  textarea { width: 100%; box-sizing: border-box; min-height: 70px; }
+  button { width: 100%; padding: 14px; font-size: 16px; color: #fff; background: #2e8b7a; border: 0; border-radius: 10px; }
+  button:disabled { background: #9aa5a0; }
+  #msg { margin-top: 12px; font-size: 14px; }
+</style>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body>
+<h1>アンケート（テスト）</h1>
+<div class="who" id="who">LINEの情報を読み込み中…</div>
+
+<div class="q"><b>Q11. 家族構成（1つ選択）</b>
+  <label><input type="radio" name="q11" value="こどもと親（両親）"> こどもと親（両親）</label>
+  <label><input type="radio" name="q11" value="こどもと親（ひとり親）"> こどもと親（ひとり親）</label>
+  <label><input type="radio" name="q11" value="その他"> その他</label>
+  <label><input type="radio" name="q11" value="回答しない"> 回答しない</label>
+</div>
+
+<div class="q"><b>Q1. 参加したきっかけ（複数選択）</b>
+  <label><input type="checkbox" name="q1" value="品川区の広報物"> 品川区の広報物</label>
+  <label><input type="checkbox" name="q1" value="SNS"> SNS（Instagram・LINEなど）</label>
+  <label><input type="checkbox" name="q1" value="WEB広告"> WEB広告</label>
+  <label><input type="checkbox" name="q1" value="チラシ・ポスター"> チラシ・ポスター</label>
+  <label><input type="checkbox" name="q1" value="知人・友人の紹介"> 知人・友人の紹介</label>
+  <label><input type="checkbox" name="q1" value="しんぐるまざあず・ふぉーらむ"> しんぐるまざあず・ふぉーらむ</label>
+  <label><input type="checkbox" name="q1" value="キッズドア"> キッズドア</label>
+  <label><input type="checkbox" name="q1" value="おてらおやつクラブ"> おてらおやつクラブ</label>
+  <label><input type="checkbox" name="q1" value="その他の支援団体"> その他の支援団体</label>
+</div>
+
+<div class="q"><b>自由記述（任意）</b>
+  <textarea id="free" placeholder="イベントで良かった点など"></textarea>
+</div>
+
+<button id="send" disabled>送信</button>
+<div id="msg"></div>
+
+<script>
+  var LIFF_ID = '2012554353-jqpgjJqg';
+  var GAS_URL = 'https://script.google.com/macros/s/AKfycbzHVMuFsxUYTD00KsDC67L818RoccK9hSHJHxJwMWnHDIROdIqEZ7EOPPvUuzcQvIMx/exec';
+  var idToken = null;
+  liff.init({ liffId: LIFF_ID }).then(function () {
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+    idToken = liff.getIDToken();
+    return liff.getProfile().then(function (p) {
+      document.getElementById('who').textContent = p.displayName + ' さんの回答として保存します';
+      document.getElementById('send').disabled = false;
+    });
+  }).catch(function (e) {
+    document.getElementById('who').textContent = 'LINEの情報を読み込めませんでした: ' + e;
+  });
+
+  document.getElementById('send').addEventListener('click', function () {
+    var btn = this; btn.disabled = true;
+    var msg = document.getElementById('msg');
+    msg.textContent = '送信中…';
+    var q11 = (document.querySelector('input[name=q11]:checked') || {}).value || '';
+    var q1 = Array.prototype.map.call(document.querySelectorAll('input[name=q1]:checked'), function (c) { return c.value; });
+    var payload = { idToken: idToken, q11: q11, q1: q1, free: document.getElementById('free').value };
+    fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
+      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (r.ok) { msg.textContent = '送信しました。ありがとうございました（' + r.name + ' さん）'; }
+        else { msg.textContent = '送信に失敗しました: ' + r.error; btn.disabled = false; }
+      })
+      .catch(function (e) { msg.textContent = '送信に失敗しました: ' + e; btn.disabled = false; });
+  });
+</script>
+</body>
+</html>
