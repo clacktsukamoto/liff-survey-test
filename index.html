@@ -73,7 +73,18 @@
     fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
       .then(function (r) { return r.json(); })
       .then(function (r) {
-        if (r.ok) { msg.textContent = '送信しました。ありがとうございました（' + r.name + ' さん）'; }
+        if (r.ok) {
+          msg.textContent = '送信しました。ありがとうございました（' + r.name + ' さん）';
+          // 回答のまとめを、本人のトーク（公式LINE宛て）にも送って、公式LINEのチャットに残す
+          if (liff.isInClient()) {
+            var text = '【アンケート回答】\n家族構成：' + (q11 || '未回答') + '\n参加のきっかけ：' + (q1.join('、') || '未回答') + '\n自由記述：' + (payload.free || 'なし');
+            liff.sendMessages([{ type: 'text', text: text.slice(0, 4500) }]).then(function () {
+              msg.textContent += '（回答のまとめをトークにも送りました）';
+            }).catch(function (e) {
+              msg.textContent += '（トークへの送信は失敗: ' + e + '）';
+            });
+          }
+        }
         else { msg.textContent = '送信に失敗しました: ' + r.error; btn.disabled = false; }
       })
       .catch(function (e) { msg.textContent = '送信に失敗しました: ' + e; btn.disabled = false; });
